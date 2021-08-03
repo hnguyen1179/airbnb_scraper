@@ -1,0 +1,8 @@
+`{
+  "name": "airbnb_scraper",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": "https://github.com/hnguyen1179/airbnb_scraper.git",
+  "author": "duke nguyen",
+  "license": "MIT"
+}
