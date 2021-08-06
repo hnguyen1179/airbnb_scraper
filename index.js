@@ -201,7 +201,7 @@ const detailedListingExtraction = () => {
 	};
 };
 
-const extractReviews = async (page, id) => {
+const extractReviews = async (page, id, scores) => {
 	const moreReviews = await page.evaluate(() =>
 		document.querySelector(".b1sec48q.v7aged4.dir.dir-ltr")
 	);
@@ -229,8 +229,8 @@ const extractReviews = async (page, id) => {
 		}
 	}
 
-	return page.evaluate(
-		({ query, listingId }) =>
+	const review = await page.evaluate(
+		({ query, listingId, scores }) =>
 			[...document.querySelectorAll(query)].map((x) => {
 				const generateRandDate = (dateString) => {
 					const date = new Date(dateString);
@@ -251,14 +251,25 @@ const extractReviews = async (page, id) => {
 					.querySelector("._1ixuu7m")
 					.innerText.split("\n,")[0];
 
+				const reviewScore = scores.map((score) => {
+					const modifier = Math.random() > 0.5 ? 0.1 : -0.1;
+					let newScore = (Number(score[1]) + modifier).toFixed(2);
+					if (newScore > 5) newScore = 5.0;
+
+					return [score[0], newScore.toString()];
+				});
+
 				return {
 					listingId,
+					scores: reviewScore,
 					date: generateRandDate(date),
 					content: x.children[1].innerText,
 				};
 			}),
-		{ query, listingId: id }
+		{ query, listingId: id, scores }
 	);
+
+	return review;
 };
 
 const scraperMain = async (browser, page) => {
@@ -272,7 +283,6 @@ const scraperMain = async (browser, page) => {
 			const DETAILED_LISTING_LINK =
 				"https://www.airbnb.com" +
 				(await page.evaluate((idx) => {
-					console.log(idx);
 					return document
 						.querySelectorAll("._8s3ctt > a")
 						[idx].getAttribute("href");
@@ -296,17 +306,19 @@ const scraperMain = async (browser, page) => {
 
 			detailedListing.id = uuidv4();
 
+			console.log(detailedListing.scores);
 			// Go into reviews and extract some users & reviews
 			const listingReviews = await extractReviews(
 				listingPage,
-				detailedListing.id
+				detailedListing.id,
+				detailedListing.scores
 			);
 
 			listingPage.close();
 
-			console.log(detailedListing); // Object
-			console.log(basicListing);    // Object
-			console.log(listingReviews);  // Array of Objects
+			// console.log(detailedListing); // Object
+			// console.log(basicListing);    // Object
+			console.log(listingReviews); // Array of Objects
 
 			// TODO :
 			// ✓ 1. Generate a proper date from "July 2021" => "July 3, 2021UTC:000", etc.An actual DateTime type with a random, valid day set.
@@ -417,6 +429,14 @@ const scraperMain = async (browser, page) => {
 		healthAndSafety 	String[] 			// ex. ['Committed to Airbnb's enhanced cleaning process', 'Airbnb's social-distancing and other COVID-19...', ...]
 		highlights				String[][] 		// ex. [['Entire Home', 'You'll have the place to yourself'], ['x','y'], ...]
 		scores						String[][]		// ex. [['Cleanliness', '5.0'], ['Location', '3.9'], ...]				
+
+		NEW REVIEW MODEL
+			id 							Int						//Generated
+			listingId				String				//uuidv4()		
+			createdAt				DateTime			
+			content					String
+			authorId				Int						//Generated
+			scores					String[][]    // ex. [['Cleanliness', '5.0'], ['Location', '3.9'], ...]				
  */
 
 // CITY
