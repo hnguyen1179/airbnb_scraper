@@ -1,40 +1,14 @@
 require("dotenv").config({ path: __dirname + "/.denv" });
 const fs = require("fs");
 const puppeteer = require("puppeteer");
-const { v4: uuidv4 } = require("uuid");
+const download = require("image-downloader");
+const hash = require("object-hash");
+
+const AMENITIES_DIR = "./svgs/amenities/";
+const HOUSE_DIR = "./svgs/houserules/";
 
 const LA_URL =
 	"https://www.airbnb.com/s/Los-Angeles--CA--United-States/homes?tab_id=home_tab&refinement_paths%5B%5D=%2Fhomes&flexible_trip_dates%5B%5D=august&flexible_trip_dates%5B%5D=september&flexible_trip_lengths%5B%5D=weekend_trip&date_picker_type=flexible_dates&search_type=user_map_move&ne_lat=34.28128357811729&ne_lng=-117.85726835397077&sw_lat=33.63200856318738&sw_lng=-118.81170560983014&zoom=10&search_by_map=true&place_id=ChIJE9on3F3HwoAR9AhGJW_fL-I";
-
-// class: _fhph4u
-// Contains list of listings
-// 20 places per listing
-
-// class: _1olmjjs6
-// Contains type of listing & location
-
-// class: _1whrsux9
-// Contains name of the listing
-
-// class: _3c0zz1
-// Contains #guests, #bedrooms, #baths, #beds
-// Contains info on basic amenities
-
-// class: _18khxk1
-// Contains #reviews and average score
-
-// class: _ls0e43
-// Contains price breakdown
-// document.getElementsByClassName('_ls0e43')[0].innerText
-// document.getElementsByClassName('_ls0e43')[2].innerText
-
-// query: document.querySelectorAll('._1h6n1zu > picture')[0].children[0].getAttribute('srcset')
-// Get current image
-
-// class: _177jc1o
-// Next image button
-
-// Can iterate through the elements by listing list and then extract information per listing per iteration
 
 const LISTINGS_COUNT = 15;
 
@@ -64,6 +38,97 @@ const scrollDown = () => {
 		top: heightToScroll,
 		behavior: "smooth",
 	});
+};
+
+const saveIMGs = async (page, id) => {
+	await Promise.all([
+		page.click("._1h6n1zu"),
+		page.waitForNavigation({ waitUntil: "networkidle2" }),
+		page.waitForTimeout(800),
+	]);
+
+	await Promise.all([
+		page.click("._1fog6rx a"),
+		page.waitForNavigation({ waitUntil: "networkidle2" }),
+		page.waitForTimeout(800),
+	]);
+
+	const totalNumberImages = await page.evaluate(() =>
+		Number(document.querySelector("._1b1whhx").innerText.split(" / ")[1])
+	);
+
+	const randomNumber = Math.ceil(Math.random() * 6) + 4;
+
+	const numberImages =
+		randomNumber > totalNumberImages ? totalNumberImages : randomNumber;
+
+	const comments = [];
+
+	for (let i = 0; i < numberImages; i++) {
+		await Promise.all([
+			page.click("button[aria-label='Next']"),
+			page.waitForNavigation({ waitUntil: "networkidle2" }),
+			page.waitForTimeout(500),
+		]);
+		
+		const comment = await page.evaluate(
+			() => document.querySelector("._s8zm01 span")?.innerText || ""
+		);
+
+		comments.push(comment);
+
+		const link = await page.evaluate(() =>
+			document
+				.querySelector("._26mmnvh img")
+				.getAttribute("src")
+				.replace("720", "1200")
+		);
+
+		const dir = `./images/${id}`;
+
+		if (!fs.existsSync(dir)) {
+			fs.mkdirSync(dir, { recursive: true });
+		}
+
+		download.image({
+			url: link,
+			dest: dir + `/image-${i}.webp`,
+		});
+	}
+
+	return comments;
+};
+
+const saveSVG = (path, names, svgs) => {
+	const directoryFiles = fs.readdirSync(path);
+
+	const cleanedDirectory = directoryFiles.map((x) =>
+		x.slice(0, x.length - 4).replaceAll("_", " ")
+	);
+
+	for (let i = 0; i < names.length; i++) {
+		const item = names[i];
+		if (!cleanedDirectory.includes(item)) {
+			const fileName = item.replaceAll(/[\s\/]/g, "_") + ".svg";
+			fs.writeFileSync(path + fileName, svgs[i]);
+		}
+	}
+};
+
+const saveSVGs = (listing) => {
+	// amenities,
+	// amenitiesSVG,
+	// houseRules,
+	// houseRulesSVG,
+	// healthAndSafety,
+	// healthAndSafetySVG;
+
+	saveSVG(AMENITIES_DIR, listing.amenities, listing.amenitiesSVG);
+	saveSVG(
+		HOUSE_DIR,
+		listing.houseRules.slice(2),
+		listing.houseRulesSVG.slice(2)
+	);
 };
 
 const basicListingExtraction = (idx) => {
@@ -125,6 +190,12 @@ const detailedListingExtraction = () => {
 		...document.querySelectorAll("._1byskwn ._19xnuo97 ._17tdr0j"),
 	]?.map((x) => x?.innerText);
 
+	const amenitiesSVG = [
+		...document.querySelectorAll(
+			"._1byskwn ._19xnuo97 ._17tdr0j ._hff5rgi"
+		),
+	].map((x) => x.innerHTML);
+
 	const priceBreakdown = [...document.querySelectorAll("._j0jkxv ._1bgajnx")]
 		?.map((x) => {
 			const output = x?.innerText.split("\n");
@@ -165,6 +236,12 @@ const detailedListingExtraction = () => {
 		})
 		?.filter((x) => x.length > 2);
 
+	const houseRulesSVG = [
+		...document
+			.querySelectorAll(".cihcm8w")[0]
+			.querySelectorAll(".i1303y2k .iv1oy2i"),
+	].map((x) => x.innerHTML);
+
 	const healthAndSafety = [
 		...document
 			.querySelectorAll(".cihcm8w")?.[1]
@@ -174,6 +251,12 @@ const detailedListingExtraction = () => {
 			return x?.innerText;
 		})
 		?.filter((x) => x.length > 2);
+
+	const healthAndSafetySVG = [
+		...document
+			.querySelectorAll(".cihcm8w")[1]
+			.querySelectorAll(".i1303y2k .iv1oy2i"),
+	].map((x) => x.innerHTML);
 
 	const scores = [
 		...document.querySelectorAll(".ciubx2o.dir.dir-ltr ._1s11ltsf"),
@@ -188,6 +271,7 @@ const detailedListingExtraction = () => {
 		city,
 		highlights,
 		amenities,
+		amenitiesSVG,
 		priceBreakdown,
 		listingDescription,
 		locationDescription,
@@ -196,7 +280,9 @@ const detailedListingExtraction = () => {
 		hostMedals,
 		hostDetails,
 		houseRules,
+		houseRulesSVG,
 		healthAndSafety,
+		healthAndSafetySVG,
 		scores,
 	};
 };
@@ -212,7 +298,9 @@ const extractReviews = async (page, id, scores) => {
 		query = "._1gjypya";
 
 		await Promise.all([
-			page.click(".b1sec48q.v7aged4.dir.dir-ltr"),
+			page.evaluate(() =>
+				document.querySelector(".b1sec48q.v7aged4.dir.dir-ltr").click()
+			),
 			page.waitForNavigation({
 				waitUntil: "networkidle2",
 			}),
@@ -297,16 +385,19 @@ const scraperMain = async (browser, page) => {
 				listingPage.waitForNavigation({
 					waitUntil: "networkidle2",
 				}),
-				listingPage.waitForDuration,
 			]);
 
 			const detailedListing = await listingPage.evaluate(
 				detailedListingExtraction
 			);
 
-			detailedListing.id = uuidv4();
+			detailedListing.id = hash(detailedListing);
 
-			console.log(detailedListing.scores);
+			saveSVGs(detailedListing);
+
+			const comments = await saveIMGs(listingPage, detailedListing.id);
+			detailedListing.imageComments = comments;
+
 			// Go into reviews and extract some users & reviews
 			const listingReviews = await extractReviews(
 				listingPage,
@@ -316,9 +407,9 @@ const scraperMain = async (browser, page) => {
 
 			listingPage.close();
 
-			// console.log(detailedListing); // Object
+			console.log(detailedListing.imageComments); // Object
 			// console.log(basicListing);    // Object
-			console.log(listingReviews); // Array of Objects
+			// console.log(listingReviews); // Array of Objects
 
 			// TODO :
 			// ✓ 1. Generate a proper date from "July 2021" => "July 3, 2021UTC:000", etc.An actual DateTime type with a random, valid day set.
@@ -326,7 +417,7 @@ const scraperMain = async (browser, page) => {
 			// From this, we can generate a random, valid reservation based on our review
 			// new Date('July 3, 2021'); Just need to find how many days are in that specific month and create a random day that isn't too close to the end of the month; cuz ez
 
-			// 2. Find the total score of a listing; create fake individual review scores that then
+			// ✓ 2. Find the total score of a listing; create fake individual review scores that then
 			// will need to average out to match the total score of the listing
 
 			// ✓ 3. Generated a unique ID for each listing
@@ -430,13 +521,13 @@ const scraperMain = async (browser, page) => {
 		highlights				String[][] 		// ex. [['Entire Home', 'You'll have the place to yourself'], ['x','y'], ...]
 		scores						String[][]		// ex. [['Cleanliness', '5.0'], ['Location', '3.9'], ...]				
 
-		NEW REVIEW MODEL
-			id 							Int						//Generated
-			listingId				String				//uuidv4()		
-			createdAt				DateTime			
-			content					String
-			authorId				Int						//Generated
-			scores					String[][]    // ex. [['Cleanliness', '5.0'], ['Location', '3.9'], ...]				
+	NEW REVIEW MODEL
+		id 							  Int						//Generated
+		listingId			  	String				//uuidv4()		
+		createdAt			  	DateTime			
+		content				  	String
+		authorId			  	Int						//Generated
+		scores				  	String[][]    // ex. [['Cleanliness', '5.0'], ['Location', '3.9'], ...]				
  */
 
 // CITY
@@ -495,7 +586,7 @@ const scraperMain = async (browser, page) => {
 
 // HEALTH & SAFETY
 // SVGS: (array)
-// 	[...document.querySelectorAll('.cihcm8w')[0].querySelectorAll('.i1303y2k .iv1oy2i')].map(x => x.innerHTML)
+// 	[...document.querySelectorAll('.cihcm8w')[1].querySelectorAll('.i1303y2k .iv1oy2i')].map(x => x.innerHTML)
 // DESCRIPTION:
 // [...document.querySelectorAll('.cihcm8w')[1].querySelectorAll('.i1303y2k span')].map(x => {
 //   return x.innerText
