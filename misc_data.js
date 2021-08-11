@@ -1,0 +1,18 @@
+const totalLangauges = [
+	"Nederlands",
+	"English",
+	"Français",
+	"Deutsch",
+	"Español",
+	"हिन्दी",
+	"ਪੰਜਾਬੀ",
+	"Русский",
+	"Українська",
+	"עברית",
+	"Tagalog",
+	"Svenska",
+	"中文 (简体)",
+	"العربية",
+	"Italiano",
+	"Norsk",
+];

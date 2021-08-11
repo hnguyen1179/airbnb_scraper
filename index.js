@@ -10,21 +10,21 @@ const HOUSE_DIR = "./svgs/houserules/";
 const LA =
 	"https://www.airbnb.com/s/Los-Angeles--CA--United-States/homes?tab_id=home_tab&refinement_paths%5B%5D=%2Fhomes&flexible_trip_dates%5B%5D=august&flexible_trip_dates%5B%5D=september&flexible_trip_lengths%5B%5D=weekend_trip&date_picker_type=flexible_dates&search_type=user_map_move&ne_lat=34.28128357811729&ne_lng=-117.85726835397077&sw_lat=33.63200856318738&sw_lng=-118.81170560983014&zoom=10&search_by_map=true&place_id=ChIJE9on3F3HwoAR9AhGJW_fL-I";
 const SAN_DIEGO =
-	"https://www.airbnb.com/s/San-Diego/homes?place_id=ChIJSx6SrQ9T2YARed8V_f0hOg0&refinement_paths%5B%5D=%2Fhomes&search_type=section_navigation";
+	"https://www.airbnb.com/s/San-Diego/homes?refinement_paths%5B%5D=%2Fhomes&search_type=filter_change&tab_id=home_tab&place_id=ChIJSx6SrQ9T2YARed8V_f0hOg0&flexible_trip_dates%5B%5D=august&flexible_trip_dates%5B%5D=september&flexible_trip_lengths%5B%5D=weekend_trip&date_picker_type=calendar&superhost=true";
 const LAS_VEGAS =
 	"https://www.airbnb.com/s/Las-Vegas/homes?place_id=ChIJ7dBoVF7EyIARYktBuOpjhPk&refinement_paths%5B%5D=%2Fhomes&search_type=section_navigation";
 const HENDERSON =
-	"https://www.airbnb.com/s/Henderson/homes?place_id=ChIJkUJfH67JyIARtWEgyjgqG-8&refinement_paths%5B%5D=%2Fhomes&search_type=section_navigation";
+	"https://www.airbnb.com/s/Henderson/homes?refinement_paths%5B%5D=%2Fhomes&search_type=filter_change&tab_id=home_tab&flexible_trip_dates%5B%5D=august&flexible_trip_dates%5B%5D=september&flexible_trip_lengths%5B%5D=weekend_trip&date_picker_type=calendar&ne_lat=36.10405042175236&ne_lng=-114.88410968248763&sw_lat=35.93355029647225&sw_lng=-115.07122058336654&zoom=12&search_by_map=true&place_id=ChIJkUJfH67JyIARtWEgyjgqG-8&price_min=173";
 const PARADISE =
-	"https://www.airbnb.com/s/Paradise/homes?place_id=ChIJ7TxCdnrFyIARlXusWpNMU5g&refinement_paths%5B%5D=%2Fhomes&search_type=section_navigation";
+	"https://www.airbnb.com/s/Paradise/homes?refinement_paths%5B%5D=%2Fhomes&search_type=filter_change&tab_id=home_tab&flexible_trip_dates%5B%5D=august&flexible_trip_dates%5B%5D=september&flexible_trip_lengths%5B%5D=weekend_trip&date_picker_type=calendar&ne_lat=36.122026529295326&ne_lng=-115.10161052782621&sw_lat=36.0368420575403&sw_lng=-115.19516597826566&zoom=13&search_by_map=true&place_id=ChIJS1WID53hwogRYIVTxbCfnYo&price_min=113";
 const BIG_BEAR =
 	"https://www.airbnb.com/s/Big-Bear-Lake/homes?place_id=ChIJZYdwAomzxIARv1O7X3ZFbfQ&refinement_paths%5B%5D=%2Fhomes&search_type=section_navigation";
 const PALM_SPRINGS =
-	"https://www.airbnb.com/s/Palm-Springs/homes?place_id=ChIJs-Xb_9Qa24ARfHntwodp5aE&refinement_paths%5B%5D=%2Fhomes&search_type=section_navigation";
+	"https://www.airbnb.com/s/Palm-Springs/homes?refinement_paths%5B%5D=%2Fhomes&search_type=filter_change&tab_id=home_tab&flexible_trip_dates%5B%5D=august&flexible_trip_dates%5B%5D=september&flexible_trip_lengths%5B%5D=weekend_trip&date_picker_type=calendar&price_min=442&place_id=ChIJs-Xb_9Qa24ARfHntwodp5aE&superhost=true";
 const SANTA_BARBARA =
 	"https://www.airbnb.com/s/Santa-Barbara/homes?place_id=ChIJ1YMtb8cU6YARSHa612Q60cg&refinement_paths%5B%5D=%2Fhomes&search_type=section_navigation";
 
-const LISTINGS_COUNT = 15;
+const LISTINGS_COUNT = 12;
 
 const scrollDown = () => {
 	const scrollable = document.querySelector("._1v5ksyp");
@@ -63,7 +63,7 @@ const saveIMGs = async (page, id) => {
 
 	const comments = [];
 
-	const dir = `./images/${id}`;
+	const dir = `./images/santa_barbara/${id}`;
 
 	if (!fs.existsSync(dir)) {
 		fs.mkdirSync(dir, { recursive: true });
@@ -97,7 +97,7 @@ const saveIMGs = async (page, id) => {
 
 		if (nextButton !== null) {
 			await Promise.all([
-				page.click("button[aria-label='Next']"),
+				page.click("._14x8wq27 button[aria-label='Next']"),
 				page.waitForNavigation({ waitUntil: "networkidle2" }),
 				page.waitForTimeout(900),
 			]);
@@ -519,12 +519,12 @@ const scraperMain = async (browser, page) => {
 	const page = await browser.newPage();
 	await Promise.all([
 		page.setViewport({ width: 1440, height: 1000 }),
-		page.goto(LA),
+		page.goto(SANTA_BARBARA),
 	]);
 
 	const data = await scraperMain(browser, page);
 
-	fs.writeFile("./output.js", JSON.stringify(data), (e) => {
+	fs.writeFile("./SANTA_BARBARA.json", JSON.stringify(data), (e) => {
 		if (e) return console.log(e);
 		console.log("Output file successfully written");
 	});
