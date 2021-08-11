@@ -12,21 +12,6 @@ const LA_URL =
 
 const LISTINGS_COUNT = 15;
 
-/**
- * This function grabs:
- *  1. Type of Listing
- *  2. Location
- *  3. Name of Listing
- *  4. #guests
- *  5. #bedrooms
- *  6. #bathrooms
- *  7. #beds
- *  8. Basic amenities
- *  9. average review score
- *  10. #reviews
- *  11. Price per night
- */
-
 const scrollDown = () => {
 	const scrollable = document.querySelector("._1v5ksyp");
 
@@ -70,7 +55,7 @@ const saveIMGs = async (page, id) => {
 			page.waitForNavigation({ waitUntil: "networkidle2" }),
 			page.waitForTimeout(500),
 		]);
-		
+
 		const comment = await page.evaluate(
 			() => document.querySelector("._s8zm01 span")?.innerText || ""
 		);
@@ -151,7 +136,7 @@ const basicListingExtraction = (idx) => {
 		document.querySelectorAll("._1p7iugi")[idx].innerText.match(/\d+/)[0]
 	);
 
-	const [reviewScore, numReviews] = document
+	const [reviewScore, _] = document
 		.querySelectorAll("._18khxk1")
 		[idx].innerText.match(/\d+.\d+/g)
 		.map((x) => Number(x));
@@ -167,7 +152,6 @@ const basicListingExtraction = (idx) => {
 		price,
 		basicAmenities,
 		reviewScore,
-		numReviews,
 	};
 };
 
@@ -220,6 +204,12 @@ const detailedListingExtraction = () => {
 	]
 		?.map((x) => x?.innerText)
 		?.filter((x) => !x.includes("Review"));
+
+	const hostName = document
+		.querySelector(".hnwb2pb.dir.dir-ltr")
+		.innerText.split(" ")[2];
+
+	const hostJoined = document.querySelector(".s9fngse.dir.dir-ltr").innerText;
 
 	const hostDetails = document
 		.querySelector(".fhhmddr")
@@ -278,6 +268,8 @@ const detailedListingExtraction = () => {
 		hostDescription,
 		stayDescription,
 		hostMedals,
+		hostName,
+		hostJoined,
 		hostDetails,
 		houseRules,
 		houseRulesSVG,
@@ -376,9 +368,8 @@ const scraperMain = async (browser, page) => {
 						[idx].getAttribute("href");
 				}, i));
 
-			// Go Into Listing and Grab Information
+			// Navigate to listing page
 			const listingPage = await browser.newPage();
-
 			await Promise.all([
 				listingPage.setViewport({ width: 1440, height: 1000 }),
 				listingPage.goto(DETAILED_LISTING_LINK),
@@ -387,16 +378,18 @@ const scraperMain = async (browser, page) => {
 				}),
 			]);
 
+			// Extracted detailed information from each listing
 			const detailedListing = await listingPage.evaluate(
 				detailedListingExtraction
 			);
 
+			// Added a unique, deterministic ID to each listing
 			detailedListing.id = hash(detailedListing);
 
+			// Save SVGs and Images of each listing into files
 			saveSVGs(detailedListing);
-
-			const comments = await saveIMGs(listingPage, detailedListing.id);
-			detailedListing.imageComments = comments;
+			// const comments = await saveIMGs(listingPage, detailedListing.id);
+			// detailedListing.imageComments = comments;
 
 			// Go into reviews and extract some users & reviews
 			const listingReviews = await extractReviews(
@@ -405,12 +398,143 @@ const scraperMain = async (browser, page) => {
 				detailedListing.scores
 			);
 
+			// Close listing page
 			listingPage.close();
 
-			console.log(detailedListing.imageComments); // Object
-			// console.log(basicListing);    // Object
+			// Set up massive object for seed purposes
+
+			// BASIC LISTING:
+			//  ✓ listingType,
+			// 	✓ location,
+			// 	✓ title,
+			// 	✓ numGuests,
+			// 	✓ numBedrooms,
+			// 	✓ numBeds,
+			// 	✓ numBaths,
+			// 	✓ price,
+			// 	✓ basicAmenities,
+			// 	✓ reviewScore,
+
+			// DETAILED LISTING:
+			//  ✓ id,
+			// 	✓ city,
+			// 	✓ highlights,
+			// 	✓ amenities,
+			// 	✓ priceBreakdown,
+			// 	✓ listingDescription,
+			// 	✓ locationDescription,
+			// 	✓ hostDescription,
+			// 	✓ stayDescription,
+			// 	✓ hostMedals,
+			//  ✓ hostName,
+			//  ✓ hostJoined,
+			// 	✓ hostDetails,
+			// 	✓ houseRules,
+			// 	✓ healthAndSafety,
+			// 	✓ scores,
+
+			/* REVIEWS:
+			 * [
+			 * 	listingId,
+			 * 	scores,
+			 *  date,
+			 *  content
+			 * ]
+			 */
+
+			// NEW HOST MODEL
+			// 	✓ firstName					String
+			// 	✓ dateJoined				DateTime			//Generated
+			// 	✓ hostDescription		String
+			// 	✓ hostDetails				String[]			// ex. ['Languages: English, French', 'Response Rate: fast', 'Response Time: faster']
+			// 	✓ hostMedals				String[] 			// ex. ['Identity verified', 'Superhost'],
+
+			// NEW LISTING MODEL
+			// 	✓ id								Int						//User Generated via UUID
+			// 	✓ title							String
+			// 	street						String				//Generated
+			// 	✓ city							String
+			// 	✓ location					String
+			// 	✓ listingDescription	String
+			// 	✓ locationDescription	String
+			// 	✓ stayDescription		String
+			// 	zipCode						Int						//Generated
+			// 	✓ price							Int
+			// 	✓ priceBreakdown		String[][]		// ex. [['Cleaning fee', '106'], ['Service fee', '50']]
+			// 	✓ numGuests					Int
+			// 	✓ numBedrooms				Int
+			// 	✓ numBeds						Int
+			// 	✓ numBaths					Int
+			// 	✓ smokingRule			  Boolean
+			// 	✓ petsRule				  Boolean
+			// 	✓ superhost					Boolean
+			// 	✓ languages					String[]      // ex. ['Chinese', 'Japanese', 'English']
+			// 	✓ imageComments			String[]
+			// 	✓ listingType				String
+			// 	✓ basicAmenities		String[]
+			// 	✓ amenities					String[]
+			// 	✓ houseRules				String[] 			// ex. ['Check-in: After 3:00 PM', 'Checkout: 11:00 AM', 'Self Check In', ''No Smoking', 'No pets', 'No parties', ...]
+			// 	✓ healthAndSafety 	String[] 			// ex. ['Committed to Airbnb's enhanced cleaning process', 'Airbnb's social-distancing and other COVID-19...', ...]
+			// 	✓ highlights				String[][] 		// ex. [['Entire Home', 'You'll have the place to yourself'], ['x','y'], ...]
+			// 	✓ scores						String[][]		// ex. [['Cleanliness', '5.0'], ['Location', '3.9'], ...]
+
+			// console.log(detailedListing); // Object
+			// console.log(basicListing); // Object
 			// console.log(listingReviews); // Array of Objects
 
+			const languagesString =
+				detailedListing.hostDetails.find((x) =>
+					x.includes("Language")
+				) || "";
+			const listingLanguages = languagesString.split(" ").slice(1);
+
+			const listing = {
+				id: detailedListing.id,
+				title: basicListing.title,
+				street: "",
+				city: detailedListing.city,
+				location: basicListing.location,
+				listingDescription: detailedListing.listingDescription,
+				locationDescription: detailedListing.locationDescription,
+				stayDescription: detailedListing.stayDescription,
+				zipcode: 0,
+				price: basicListing.price,
+				priceBreakdown: detailedListing.priceBreakdown,
+				numGuests: basicListing.numGuests,
+				numBedrooms: basicListing.numBedrooms,
+				numBeds: basicListing.numBeds,
+				numBaths: basicListing.numBaths,
+				smokingRule:
+					detailedListing.houseRules.includes("Smoking is allowed"),
+				petsRule:
+					detailedListing.houseRules.includes("Pets are allowed"),
+				superhost: detailedListing.hostMedals.includes("Superhost"),
+				languages: listingLanguages,
+				// imageComments: detailedListing.imageComments,
+				listingType: basicListing.listingType,
+				basicAmenities: basicListing.basicAmenities,
+				amenities: detailedListing.amenities,
+				houseRules: detailedListing.houseRules,
+				healthAndSafety: detailedListing.healthAndSafety,
+				highlights: detailedListing.highlights,
+				score: basicListing.reviewScore,
+				scoreBreakdown: detailedListing.scores,
+				reviews: listingReviews,
+			};
+
+			const host = {
+				firstName: detailedListing.hostName,
+				dateJoined: detailedListing.hostJoined,
+				description: detailedListing.hostDescription,
+				details: detailedListing.hostDetails,
+				medals: detailedListing.hostMedals,
+			};
+
+			// Push massive object into 'output' array
+			output.push({
+				host,
+				listing
+			})
 			// TODO :
 			// ✓ 1. Generate a proper date from "July 2021" => "July 3, 2021UTC:000", etc.An actual DateTime type with a random, valid day set.
 			// This value will go into the 'createdAt' column in our Review Model;
@@ -422,15 +546,13 @@ const scraperMain = async (browser, page) => {
 
 			// ✓ 3. Generated a unique ID for each listing
 
-			// 4. Extract SVGs and Images from each listing
+			// ✓ 4. Extract SVGs and Images from each listing
 
-			// 5. Push out a MASSIVE object for each listing that combines all the necessary
+			// ✓ 5. Push out a MASSIVE object for each listing that combines all the necessary
 			// information for proper models of LISTING, HOST, REVIEWS (PARTIAL)
 			// USERS and RESERVATIONS will be generated via JS on upon seeding based on the REVIEWS (PARTIAL)
 			// USERS -> Creates REVIEWS (FULL) & PREV & FUTURE RESERVATIONS
 			// HOSTS -> Created LISTINGS
-
-			// output.push(basicListing);
 		}
 	} catch (e) {
 		console.log(e);
@@ -453,15 +575,18 @@ const scraperMain = async (browser, page) => {
   -numBaths         Int
   -listingType      String
   -amenities       String[]
+  -smokingRule     Boolean 
+  -petsRule        Boolean
   xcheckIn         Int // DELETE
   xcheckOut        Int // DELETE
   xselfCheckIn     Boolean // DELETE
   xruleDescription String	// DELETE
-  xsmokingRule     Boolean // DELETE
   xpartiesRule     Boolean // DELETE
-  xpetsRule        Boolean // DELETE
 
 	ADD:
+	-languages				String[]
+	-imageComments		String[]
+	-superhost			  Boolean
 	-basicAmenities 	String[]
 	-priceBreakdown		String[][]
 	-houseRules				String[] ex. ['Check-in: After 3:00 PM', 'Checkout: 11:00 AM', 'Self Check In', ''No Smoking', 'No pets', 'No parties']
@@ -473,29 +598,25 @@ const scraperMain = async (browser, page) => {
 
 	HOST MODEL
   -firstName     String
-  -lastName      String  	 //Randomly Generate
+	-lastName 		 String   // DELETE
   -dateJoined    DateTime  //Randomly Generate
   -description   String
   -languages     String[] // DELETE
   -responseRate  Int			// DELETE
   -responseTime  String 	// DELETE
-  -superHost     Boolean	
-  -enhancedClean Boolean   
+  -superHost     Boolean	// DELETE
+  -enhancedClean Boolean  // DELETE
 
 	ADD:
 	-hostDetails  String[] ex. ['Languages: English, French', 'Response Rate: fast', 'Response Time: faster']
-	-verified			Boolean
+	-hostMedals		String[] ex. ['Identity Verified', 'Superhost']
 
 	NEW HOST MODEL 
 		firstName					String
-		lastName 					String				//Generated
-		dateJoined				DateTime			//Generated
+		dateJoined				DateTime			
 		hostDescription		String
 		hostDetails				String[]			// ex. ['Languages: English, French', 'Response Rate: fast', 'Response Time: faster']
 		hostMedals				String[] 			// ex. ['Identity verified', 'Superhost'],
-		superHost					Boolean
-		enhancedClean			Boolean
-		verified					Boolean
 
 	NEW LISTING MODEL
 		id								Int						//User Generated via UUID
@@ -513,6 +634,11 @@ const scraperMain = async (browser, page) => {
 		numBedrooms				Int
 		numBeds						Int
 		numBaths					Int
+		smokingRule			  Boolean
+		petsRule				  Boolean
+		superhost					Boolean 
+		languages					String[]      // ex. ['Chinese', 'Japanese', 'English']
+		imageComments			String[]
 		listingType				String
 		basicAmenities		String[] 
 		amenities					String[]
@@ -529,68 +655,6 @@ const scraperMain = async (browser, page) => {
 		authorId			  	Int						//Generated
 		scores				  	String[][]    // ex. [['Cleanliness', '5.0'], ['Location', '3.9'], ...]				
  */
-
-// CITY
-// document.querySelector('._pbq7fmm')?.innerText.split(', ')[0]
-
-// LISTING HIGHLIGHTS
-// SVGS:
-// 	[...document.querySelectorAll("div[data-section-id='HIGHLIGHTS_DEFAULT'] ._1vjikx5 ._1t2btyf")].map(x => x.innerHTML)
-// Type & description: [['Entire Home', 'You'll have the place to yourself']...]
-//  [...document.querySelectorAll("div[data-section-id='HIGHLIGHTS_DEFAULT'] ._1vjikx5 ._1mqc21n")].map(x => x?.innerText.split("\n"))
-
-// LISTING DESCRIPTION
-// 	document.querySelector("div[data-section-id='DESCRIPTION_DEFAULT']").innerText
-
-// AMENITIES (WHAT THIS PLACE OFFERS)
-// SVGS: (array)
-// 	[...document.querySelectorAll('._1byskwn ._19xnuo97 ._17tdr0j ._hff5rgi')].map(x => x.innerHTML)
-// TYPE: ['Kitchen', 'Shower', 'Bathroom'...]
-//  [...document.querySelectorAll('._1byskwn ._19xnuo97 ._17tdr0j')].map(x => x.innerText)
-
-// PRICE BREAKDOWN ex. [['Service fee', '$42']...]
-// [...document.querySelectorAll('._j0jkxv ._1bgajnx')].map(x => {
-//    const output = x.innerText.split('\n');
-//    return [output[0], Number(output[2].slice(1))]
-// })
-
-// HOST DESCRIPTION
-// document.querySelectorAll('._1d784e5')[0]?.innerText
-
-// STAY DESCRIPTION
-// document.querySelectorAll('._1d784e5')[1]?.innerText
-
-// HOST MEDALS (array) ex. ['333 Reviews', 'Identity Verified', 'Superhost']
-// [...document.querySelectorAll('.tq6hspd .tpa8qb9 .l1dfad8f')].map(x => x.innerText)
-
-// LANGUAGES (array)
-// document.querySelectorAll('.f19phm7j')[1]?.innerText.slice(11).split(", ")
-
-// RESPONSE RATE (number)
-// Number(document.querySelectorAll('.f19phm7j')[2]?.innerText.match(/\d+/g)[0])
-
-// RESPONSE TIME (string) ex. within an hour
-// document.querySelectorAll('.f19phm7j')[3]?.innerText.slice(15)
-
-// CHECK IN TIME
-
-// CHECK OUT TIME
-
-// HOUSE RULES
-// SVGS: (array)
-// 	[...document.querySelectorAll('.cihcm8w')[0].querySelectorAll('.i1303y2k .iv1oy2i')].map(x => x.innerHTML)
-// DESCRIPTION:
-// [...document.querySelectorAll('.cihcm8w')[0].querySelectorAll('.i1303y2k span')].map(x => {
-//   return x.innerText
-// }).filter(x => x.length > 2)
-
-// HEALTH & SAFETY
-// SVGS: (array)
-// 	[...document.querySelectorAll('.cihcm8w')[1].querySelectorAll('.i1303y2k .iv1oy2i')].map(x => x.innerHTML)
-// DESCRIPTION:
-// [...document.querySelectorAll('.cihcm8w')[1].querySelectorAll('.i1303y2k span')].map(x => {
-//   return x.innerText
-// }).filter(x => x.length > 2)
 
 (async () => {
 	const browser = await puppeteer.launch({
