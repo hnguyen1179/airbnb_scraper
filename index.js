@@ -7,8 +7,33 @@ const hash = require("object-hash");
 const AMENITIES_DIR = "./svgs/amenities/";
 const HOUSE_DIR = "./svgs/houserules/";
 
-const LA_URL =
+const LA =
 	"https://www.airbnb.com/s/Los-Angeles--CA--United-States/homes?tab_id=home_tab&refinement_paths%5B%5D=%2Fhomes&flexible_trip_dates%5B%5D=august&flexible_trip_dates%5B%5D=september&flexible_trip_lengths%5B%5D=weekend_trip&date_picker_type=flexible_dates&search_type=user_map_move&ne_lat=34.28128357811729&ne_lng=-117.85726835397077&sw_lat=33.63200856318738&sw_lng=-118.81170560983014&zoom=10&search_by_map=true&place_id=ChIJE9on3F3HwoAR9AhGJW_fL-I";
+const SAN_DIEGO =
+	"https://www.airbnb.com/s/San-Diego/homes?place_id=ChIJSx6SrQ9T2YARed8V_f0hOg0&refinement_paths%5B%5D=%2Fhomes&search_type=section_navigation";
+const LAS_VEGAS =
+	"https://www.airbnb.com/s/Las-Vegas/homes?place_id=ChIJ7dBoVF7EyIARYktBuOpjhPk&refinement_paths%5B%5D=%2Fhomes&search_type=section_navigation";
+const HENDERSON =
+	"https://www.airbnb.com/s/Henderson/homes?place_id=ChIJkUJfH67JyIARtWEgyjgqG-8&refinement_paths%5B%5D=%2Fhomes&search_type=section_navigation";
+const PARADISE =
+	"https://www.airbnb.com/s/Paradise/homes?place_id=ChIJ7TxCdnrFyIARlXusWpNMU5g&refinement_paths%5B%5D=%2Fhomes&search_type=section_navigation";
+const BIG_BEAR =
+	"https://www.airbnb.com/s/Big-Bear-Lake/homes?place_id=ChIJZYdwAomzxIARv1O7X3ZFbfQ&refinement_paths%5B%5D=%2Fhomes&search_type=section_navigation";
+const PALM_SPRINGS =
+	"https://www.airbnb.com/s/Palm-Springs/homes?place_id=ChIJs-Xb_9Qa24ARfHntwodp5aE&refinement_paths%5B%5D=%2Fhomes&search_type=section_navigation";
+const SANTA_BARBARA =
+	"https://www.airbnb.com/s/Santa-Barbara/homes?place_id=ChIJ1YMtb8cU6YARSHa612Q60cg&refinement_paths%5B%5D=%2Fhomes&search_type=section_navigation";
+	
+const URL_ARRAY = [
+	LA,
+	SAN_DIEGO,
+	LAS_VEGAS,
+	HENDERSON,
+	PARADISE,
+	BIG_BEAR,
+	PALM_SPRINGS,
+	SANTA_BARBARA,
+]
 
 const LISTINGS_COUNT = 15;
 
@@ -388,8 +413,8 @@ const scraperMain = async (browser, page) => {
 
 			// Save SVGs and Images of each listing into files
 			saveSVGs(detailedListing);
-			// const comments = await saveIMGs(listingPage, detailedListing.id);
-			// detailedListing.imageComments = comments;
+			const comments = await saveIMGs(listingPage, detailedListing.id);
+			detailedListing.imageComments = comments;
 
 			// Go into reviews and extract some users & reviews
 			const listingReviews = await extractReviews(
@@ -402,81 +427,6 @@ const scraperMain = async (browser, page) => {
 			listingPage.close();
 
 			// Set up massive object for seed purposes
-
-			// BASIC LISTING:
-			//  ✓ listingType,
-			// 	✓ location,
-			// 	✓ title,
-			// 	✓ numGuests,
-			// 	✓ numBedrooms,
-			// 	✓ numBeds,
-			// 	✓ numBaths,
-			// 	✓ price,
-			// 	✓ basicAmenities,
-			// 	✓ reviewScore,
-
-			// DETAILED LISTING:
-			//  ✓ id,
-			// 	✓ city,
-			// 	✓ highlights,
-			// 	✓ amenities,
-			// 	✓ priceBreakdown,
-			// 	✓ listingDescription,
-			// 	✓ locationDescription,
-			// 	✓ hostDescription,
-			// 	✓ stayDescription,
-			// 	✓ hostMedals,
-			//  ✓ hostName,
-			//  ✓ hostJoined,
-			// 	✓ hostDetails,
-			// 	✓ houseRules,
-			// 	✓ healthAndSafety,
-			// 	✓ scores,
-
-			/* REVIEWS:
-			 * [
-			 * 	listingId,
-			 * 	scores,
-			 *  date,
-			 *  content
-			 * ]
-			 */
-
-			// NEW HOST MODEL
-			// 	✓ firstName					String
-			// 	✓ dateJoined				DateTime			//Generated
-			// 	✓ hostDescription		String
-			// 	✓ hostDetails				String[]			// ex. ['Languages: English, French', 'Response Rate: fast', 'Response Time: faster']
-			// 	✓ hostMedals				String[] 			// ex. ['Identity verified', 'Superhost'],
-
-			// NEW LISTING MODEL
-			// 	✓ id								Int						//User Generated via UUID
-			// 	✓ title							String
-			// 	street						String				//Generated
-			// 	✓ city							String
-			// 	✓ location					String
-			// 	✓ listingDescription	String
-			// 	✓ locationDescription	String
-			// 	✓ stayDescription		String
-			// 	zipCode						Int						//Generated
-			// 	✓ price							Int
-			// 	✓ priceBreakdown		String[][]		// ex. [['Cleaning fee', '106'], ['Service fee', '50']]
-			// 	✓ numGuests					Int
-			// 	✓ numBedrooms				Int
-			// 	✓ numBeds						Int
-			// 	✓ numBaths					Int
-			// 	✓ smokingRule			  Boolean
-			// 	✓ petsRule				  Boolean
-			// 	✓ superhost					Boolean
-			// 	✓ languages					String[]      // ex. ['Chinese', 'Japanese', 'English']
-			// 	✓ imageComments			String[]
-			// 	✓ listingType				String
-			// 	✓ basicAmenities		String[]
-			// 	✓ amenities					String[]
-			// 	✓ houseRules				String[] 			// ex. ['Check-in: After 3:00 PM', 'Checkout: 11:00 AM', 'Self Check In', ''No Smoking', 'No pets', 'No parties', ...]
-			// 	✓ healthAndSafety 	String[] 			// ex. ['Committed to Airbnb's enhanced cleaning process', 'Airbnb's social-distancing and other COVID-19...', ...]
-			// 	✓ highlights				String[][] 		// ex. [['Entire Home', 'You'll have the place to yourself'], ['x','y'], ...]
-			// 	✓ scores						String[][]		// ex. [['Cleanliness', '5.0'], ['Location', '3.9'], ...]
 
 			// console.log(detailedListing); // Object
 			// console.log(basicListing); // Object
@@ -510,7 +460,7 @@ const scraperMain = async (browser, page) => {
 					detailedListing.houseRules.includes("Pets are allowed"),
 				superhost: detailedListing.hostMedals.includes("Superhost"),
 				languages: listingLanguages,
-				// imageComments: detailedListing.imageComments,
+				imageComments: detailedListing.imageComments,
 				listingType: basicListing.listingType,
 				basicAmenities: basicListing.basicAmenities,
 				amenities: detailedListing.amenities,
@@ -519,7 +469,6 @@ const scraperMain = async (browser, page) => {
 				highlights: detailedListing.highlights,
 				score: basicListing.reviewScore,
 				scoreBreakdown: detailedListing.scores,
-				reviews: listingReviews,
 			};
 
 			const host = {
@@ -533,8 +482,9 @@ const scraperMain = async (browser, page) => {
 			// Push massive object into 'output' array
 			output.push({
 				host,
-				listing
-			})
+				listing,
+				reviews: listingReviews,
+			});
 			// TODO :
 			// ✓ 1. Generate a proper date from "July 2021" => "July 3, 2021UTC:000", etc.An actual DateTime type with a random, valid day set.
 			// This value will go into the 'createdAt' column in our Review Model;
@@ -561,101 +511,6 @@ const scraperMain = async (browser, page) => {
 	return output;
 };
 
-/**
-	LISTING MODEL
-  -title            String		
-  -street            String  //Randomly Generate
-  -city             String
-  -houseDescription String
-  -zipCode           Int			//Randomly Generate
-  -price            Int
-  -numGuests        Int
-  -numBedrooms      Int
-  -numBeds          Int
-  -numBaths         Int
-  -listingType      String
-  -amenities       String[]
-  -smokingRule     Boolean 
-  -petsRule        Boolean
-  xcheckIn         Int // DELETE
-  xcheckOut        Int // DELETE
-  xselfCheckIn     Boolean // DELETE
-  xruleDescription String	// DELETE
-  xpartiesRule     Boolean // DELETE
-
-	ADD:
-	-languages				String[]
-	-imageComments		String[]
-	-superhost			  Boolean
-	-basicAmenities 	String[]
-	-priceBreakdown		String[][]
-	-houseRules				String[] ex. ['Check-in: After 3:00 PM', 'Checkout: 11:00 AM', 'Self Check In', ''No Smoking', 'No pets', 'No parties']
-	-healthAndSafety 	String[] ex. ['Committed to Airbnb's enhanced cleaning process', 'Airbnb's social-distancing and other COVID-19...'...]
-	-highlights 			String[][] ex. [['Entire Home', 'You'll have the place to yourself'], ['x','y'], ]
-	-stayDescription	String 
-
-
-
-	HOST MODEL
-  -firstName     String
-	-lastName 		 String   // DELETE
-  -dateJoined    DateTime  //Randomly Generate
-  -description   String
-  -languages     String[] // DELETE
-  -responseRate  Int			// DELETE
-  -responseTime  String 	// DELETE
-  -superHost     Boolean	// DELETE
-  -enhancedClean Boolean  // DELETE
-
-	ADD:
-	-hostDetails  String[] ex. ['Languages: English, French', 'Response Rate: fast', 'Response Time: faster']
-	-hostMedals		String[] ex. ['Identity Verified', 'Superhost']
-
-	NEW HOST MODEL 
-		firstName					String
-		dateJoined				DateTime			
-		hostDescription		String
-		hostDetails				String[]			// ex. ['Languages: English, French', 'Response Rate: fast', 'Response Time: faster']
-		hostMedals				String[] 			// ex. ['Identity verified', 'Superhost'],
-
-	NEW LISTING MODEL
-		id								Int						//User Generated via UUID
-		title							String
-		street						String				//Generated
-		city							String
-		location					String			
-		listingDescription	String		
-		locationDescription	String
-		stayDescription		String
-		zipCode						Int						//Generated
-		price							Int
-		priceBreakdown		String[][]		// ex. [['Cleaning fee', '106'], ['Service fee', '50']]
-		numGuests					Int
-		numBedrooms				Int
-		numBeds						Int
-		numBaths					Int
-		smokingRule			  Boolean
-		petsRule				  Boolean
-		superhost					Boolean 
-		languages					String[]      // ex. ['Chinese', 'Japanese', 'English']
-		imageComments			String[]
-		listingType				String
-		basicAmenities		String[] 
-		amenities					String[]
-		houseRules				String[] 			// ex. ['Check-in: After 3:00 PM', 'Checkout: 11:00 AM', 'Self Check In', ''No Smoking', 'No pets', 'No parties', ...]
-		healthAndSafety 	String[] 			// ex. ['Committed to Airbnb's enhanced cleaning process', 'Airbnb's social-distancing and other COVID-19...', ...]
-		highlights				String[][] 		// ex. [['Entire Home', 'You'll have the place to yourself'], ['x','y'], ...]
-		scores						String[][]		// ex. [['Cleanliness', '5.0'], ['Location', '3.9'], ...]				
-
-	NEW REVIEW MODEL
-		id 							  Int						//Generated
-		listingId			  	String				//uuidv4()		
-		createdAt			  	DateTime			
-		content				  	String
-		authorId			  	Int						//Generated
-		scores				  	String[][]    // ex. [['Cleanliness', '5.0'], ['Location', '3.9'], ...]				
- */
-
 (async () => {
 	const browser = await puppeteer.launch({
 		headless: false,
@@ -664,7 +519,7 @@ const scraperMain = async (browser, page) => {
 	const page = await browser.newPage();
 	await Promise.all([
 		page.setViewport({ width: 1440, height: 1000 }),
-		page.goto(LA_URL),
+		page.goto(LA),
 	]);
 
 	const data = await scraperMain(browser, page);

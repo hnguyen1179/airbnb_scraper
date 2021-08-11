@@ -59,3 +59,92 @@
 // [...document.querySelectorAll('.cihcm8w')[1].querySelectorAll('.i1303y2k span')].map(x => {
 //   return x.innerText
 // }).filter(x => x.length > 2)
+
+/**
+	LISTING MODEL
+  -title            String		
+  -street            String  //Randomly Generate
+  -city             String
+  -houseDescription String
+  -zipCode           Int			//Randomly Generate
+  -price            Int
+  -numGuests        Int
+  -numBedrooms      Int
+  -numBeds          Int
+  -numBaths         Int
+  -listingType      String
+  -amenities       String[]
+  -smokingRule     Boolean 
+  -petsRule        Boolean
+  xcheckIn         Int // DELETE
+  xcheckOut        Int // DELETE
+  xselfCheckIn     Boolean // DELETE
+  xruleDescription String	// DELETE
+  xpartiesRule     Boolean // DELETE
+
+	ADD:
+	-languages				String[]
+	-imageComments		String[]
+	-superhost			  Boolean
+	-basicAmenities 	String[]
+	-priceBreakdown		String[][]
+	-houseRules				String[] ex. ['Check-in: After 3:00 PM', 'Checkout: 11:00 AM', 'Self Check In', ''No Smoking', 'No pets', 'No parties']
+	-healthAndSafety 	String[] ex. ['Committed to Airbnb's enhanced cleaning process', 'Airbnb's social-distancing and other COVID-19...'...]
+	-highlights 			String[][] ex. [['Entire Home', 'You'll have the place to yourself'], ['x','y'], ]
+	-stayDescription	String 
+
+
+
+	HOST MODEL
+  -firstName     String
+	-lastName 		 String   // DELETE
+  -dateJoined    DateTime  //Randomly Generate
+  -description   String
+  -languages     String[] // DELETE
+  -responseRate  Int			// DELETE
+  -responseTime  String 	// DELETE
+  -superHost     Boolean	// DELETE
+  -enhancedClean Boolean  // DELETE
+
+	ADD:
+	-hostDetails  String[] ex. ['Languages: English, French', 'Response Rate: fast', 'Response Time: faster']
+	-hostMedals		String[] ex. ['Identity Verified', 'Superhost']
+
+	NEW HOST MODEL 
+		firstName					String
+		dateJoined				DateTime			
+		hostDescription		String
+		hostDetails				String[]			// ex. ['Languages: English, French', 'Response Rate: fast', 'Response Time: faster']
+		hostMedals				String[] 			// ex. ['Identity verified', 'Superhost'],
+
+	NEW LISTING MODEL
+		id								Int						//User Generated via UUID
+		title							String
+		street						String				//Generated
+		city							String
+		location					String			
+		listingDescription	String		
+		locationDescription	String
+		stayDescription		String
+		zipCode						Int						//Generated
+		price							Int
+		priceBreakdown		String[][]		// ex. [['Cleaning fee', '106'], ['Service fee', '50']]
+		numGuests					Int
+		numBedrooms				Int
+		numBeds						Int
+		numBaths					Int
+		smokingRule			  Boolean
+		petsRule				  Boolean
+		superhost					Boolean 
+		languages					String[]      // ex. ['Chinese', 'Japanese', 'English']
+		imageComments			String[]
+		listingType				String
+		basicAmenities		String[] 
+		amenities					String[]
+		houseRules				String[] 			// ex. ['Check-in: After 3:00 PM', 'Checkout: 11:00 AM', 'Self Check In', ''No Smoking', 'No pets', 'No parties', ...]
+		healthAndSafety 	String[] 			// ex. ['Committed to Airbnb's enhanced cleaning process', 'Airbnb's social-distancing and other COVID-19...', ...]
+		highlights				String[][] 		// ex. [['Entire Home', 'You'll have the place to yourself'], ['x','y'], ...]
+		scores						String[][]		// ex. [['Cleanliness', '5.0'], ['Location', '3.9'], ...]				
+
+	
+ */
