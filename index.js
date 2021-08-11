@@ -23,17 +23,6 @@ const PALM_SPRINGS =
 	"https://www.airbnb.com/s/Palm-Springs/homes?place_id=ChIJs-Xb_9Qa24ARfHntwodp5aE&refinement_paths%5B%5D=%2Fhomes&search_type=section_navigation";
 const SANTA_BARBARA =
 	"https://www.airbnb.com/s/Santa-Barbara/homes?place_id=ChIJ1YMtb8cU6YARSHa612Q60cg&refinement_paths%5B%5D=%2Fhomes&search_type=section_navigation";
-	
-const URL_ARRAY = [
-	LA,
-	SAN_DIEGO,
-	LAS_VEGAS,
-	HENDERSON,
-	PARADISE,
-	BIG_BEAR,
-	PALM_SPRINGS,
-	SANTA_BARBARA,
-]
 
 const LISTINGS_COUNT = 15;
 
@@ -58,9 +47,9 @@ const saveIMGs = async (page, id) => {
 	]);
 
 	await Promise.all([
-		page.click("._1fog6rx a"),
+		page.click("._1oaklsk ._skzmvy ._1h6n1zu picture img"),
 		page.waitForNavigation({ waitUntil: "networkidle2" }),
-		page.waitForTimeout(800),
+		page.waitForTimeout(1000),
 	]);
 
 	const totalNumberImages = await page.evaluate(() =>
@@ -74,13 +63,13 @@ const saveIMGs = async (page, id) => {
 
 	const comments = [];
 
-	for (let i = 0; i < numberImages; i++) {
-		await Promise.all([
-			page.click("button[aria-label='Next']"),
-			page.waitForNavigation({ waitUntil: "networkidle2" }),
-			page.waitForTimeout(500),
-		]);
+	const dir = `./images/${id}`;
 
+	if (!fs.existsSync(dir)) {
+		fs.mkdirSync(dir, { recursive: true });
+	}
+
+	for (let i = 0; i < numberImages; i++) {
 		const comment = await page.evaluate(
 			() => document.querySelector("._s8zm01 span")?.innerText || ""
 		);
@@ -91,19 +80,28 @@ const saveIMGs = async (page, id) => {
 			document
 				.querySelector("._26mmnvh img")
 				.getAttribute("src")
-				.replace("720", "1200")
+				.replace("w=720", "w=1200")
 		);
 
-		const dir = `./images/${id}`;
+		download
+			.image({
+				url: link,
+				dest: dir + `/image-${i}.webp`,
+			})
+			.then(({ fileName }) => {})
+			.catch((err) => console.log(err));
 
-		if (!fs.existsSync(dir)) {
-			fs.mkdirSync(dir, { recursive: true });
+		const nextButton = await page.evaluate(() =>
+			document.querySelector("button[aria-label='Next']")
+		);
+
+		if (nextButton !== null) {
+			await Promise.all([
+				page.click("button[aria-label='Next']"),
+				page.waitForNavigation({ waitUntil: "networkidle2" }),
+				page.waitForTimeout(900),
+			]);
 		}
-
-		download.image({
-			url: link,
-			dest: dir + `/image-${i}.webp`,
-		});
 	}
 
 	return comments;
@@ -306,7 +304,7 @@ const detailedListingExtraction = () => {
 
 const extractReviews = async (page, id, scores) => {
 	const moreReviews = await page.evaluate(() =>
-		document.querySelector(".b1sec48q.v7aged4.dir.dir-ltr")
+		document.querySelector(".sngb06w .b1sec48q.v7aged4.dir.dir-ltr")
 	);
 
 	let query = ".rici162.dir.dir-ltr";
@@ -316,7 +314,9 @@ const extractReviews = async (page, id, scores) => {
 
 		await Promise.all([
 			page.evaluate(() =>
-				document.querySelector(".b1sec48q.v7aged4.dir.dir-ltr").click()
+				document
+					.querySelector(".sngb06w .b1sec48q.v7aged4.dir.dir-ltr")
+					.click()
 			),
 			page.waitForNavigation({
 				waitUntil: "networkidle2",
@@ -523,5 +523,9 @@ const scraperMain = async (browser, page) => {
 	]);
 
 	const data = await scraperMain(browser, page);
-	console.log("data: ", data);
+
+	fs.writeFile("./output.js", JSON.stringify(data), (e) => {
+		if (e) return console.log(e);
+		console.log("Output file successfully written");
+	});
 })();
