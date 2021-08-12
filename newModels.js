@@ -16,7 +16,7 @@
 // 	stayDescription		String
 // 	zipCode						Int						// Generated
 // 	price							Int
-// 	priceBreakdown		String[][]		// ex. [['Cleaning fee', '106'], ['Service fee', '50']]
+//  cleaningFee       Int           // Occupancy tax & service fee calculated on checkout; based on total price 
 // 	numGuests					Int
 // 	numBedrooms				Int
 // 	numBeds						Int

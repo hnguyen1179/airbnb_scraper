@@ -485,24 +485,6 @@ const scraperMain = async (browser, page) => {
 				listing,
 				reviews: listingReviews,
 			});
-			// TODO :
-			// ✓ 1. Generate a proper date from "July 2021" => "July 3, 2021UTC:000", etc.An actual DateTime type with a random, valid day set.
-			// This value will go into the 'createdAt' column in our Review Model;
-			// From this, we can generate a random, valid reservation based on our review
-			// new Date('July 3, 2021'); Just need to find how many days are in that specific month and create a random day that isn't too close to the end of the month; cuz ez
-
-			// ✓ 2. Find the total score of a listing; create fake individual review scores that then
-			// will need to average out to match the total score of the listing
-
-			// ✓ 3. Generated a unique ID for each listing
-
-			// ✓ 4. Extract SVGs and Images from each listing
-
-			// ✓ 5. Push out a MASSIVE object for each listing that combines all the necessary
-			// information for proper models of LISTING, HOST, REVIEWS (PARTIAL)
-			// USERS and RESERVATIONS will be generated via JS on upon seeding based on the REVIEWS (PARTIAL)
-			// USERS -> Creates REVIEWS (FULL) & PREV & FUTURE RESERVATIONS
-			// HOSTS -> Created LISTINGS
 		}
 	} catch (e) {
 		console.log(e);

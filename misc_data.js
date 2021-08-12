@@ -16,3 +16,11 @@ const totalLangauges = [
 	"Italiano",
 	"Norsk",
 ];
+
+// Percentage of total (price per night * nights, cleaning fee, service fee)
+const occupancyTaxRate = {
+	sanDiego: 10.5,
+	losAngeles: 14,
+	palmDesert: 11,
+	bigBear: 7,
+}
