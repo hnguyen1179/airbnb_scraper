@@ -64,8 +64,9 @@ const reviews = require("./reviews.json");
  *      }
  *
  *  ✓ 2. Download avatars for hosts and users
- *  3. Create past-reservations and future-reservations for each user based on reviews and randomly generating from listings data
- *  3. Finalize datasets free of bugs in data
+ *  ✓ 3. Create past-reservations and future-reservations for each user based on reviews and randomly generating from listings data
+ *  ✓ 3. Finalize datasets free of bugs in data
+ *  ✓ 4. Uploaded images to Cloudinary
  *
  */
 

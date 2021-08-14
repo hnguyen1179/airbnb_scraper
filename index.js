@@ -1,4 +1,4 @@
-require("dotenv").config({ path: __dirname + "/.denv" });
+require("dotenv").config({ path: __dirname + "/.env" });
 const fs = require("fs");
 const puppeteer = require("puppeteer");
 const download = require("image-downloader");
