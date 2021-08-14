@@ -33,6 +33,8 @@
 // 	healthAndSafety 	String[] 			// ex. ['Committed to Airbnb's enhanced cleaning process', 'Airbnb's social-distancing and other COVID-19...', ...]
 // 	highlights				String[][] 		// ex. [['Entire Home', 'You'll have the place to yourself'], ['x','y'], ...]
 // 	scores						String[][]		// ex. [['Cleanliness', '5.0'], ['Location', '3.9'], ...]
+//  datesUnavailable  JSON
+//  region            String
 
 // NEW REVIEW MODEL
 // 	id 							  Int						// Generated

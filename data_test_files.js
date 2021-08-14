@@ -1,5 +1,8 @@
-const data = require("./user_and_reviews.json");
+const fs = require("fs");
+const userAndReviews = require("./user_and_reviews_reservations.json");
+const hostAndListings = require("./host_and_listings.json");
 const raw = require("./raw_data/raw_data_revised_5.json");
+const { start } = require("repl");
 
 const listings = raw.map((obj) => obj.listing);
 
@@ -20,65 +23,139 @@ const occupancyTaxRate = {
 };
 
 const calculateTotal = (listing, numNights) => {
-	const price = listing.price;
+	const price = listing.price * numNights;
 	const cleaningFee = listing.cleaningFee;
 	let occupancyTax = 0;
 
 	if (listing.region in occupancyTaxRate) {
-		occupancyTax =
-			occupancyTaxRate[listing.region] *
-			(price * numNights + cleaningFee);
+		occupancyTax = occupancyTaxRate[listing.region] * (price + cleaningFee);
 	}
 
 	const serviceFee = (price + cleaningFee + occupancyTax) * 0.12;
 
-	return (price + cleaningFee + occupancyTax + serviceFee).toFixed(2);
+	return +(price + cleaningFee + occupancyTax + serviceFee).toFixed(2);
 };
 
 // Service fee is 12% of total ( $ x nights, cleaning fee, occupancy fee )
 
-// Generating previous reservations
-const dataAndPastReservations = data.map((obj) => {
-	const reservations = obj.reviews.map((review) => {
-		const reviewDate = new Date(review.date);
+// 1. Generate datesUnavailable array...
+// 2. Generate lengthOfStay
+// 3. Pick at random within the next 6 months a date; Gaussian random to average closer to the earlier months
+// 4. If valid, remove those dates from the datesAvailable array
 
-		const lengthStay = Math.ceil(gaussianRandom(8) * 12);
-		const daysBefore = Math.ceil(Math.random() * 3) + lengthStay;
+const generateReservation = (user, listing) => {
+	let flag = true;
+	const daysUsed = [];
+	const reservation = {};
 
-		const dateStart = new Date(review.date);
-		dateStart.setDate(reviewDate.getDate() - daysBefore);
+	while (flag) {
+		const lengthOfStay = Math.ceil(gaussianRandom(2) * 5);
+		// 240 is 8 months out from current; makeing bookings spotty
+		const randomPointInFuture = Math.ceil(Math.random() * 240);
 
-		const dateEnd = new Date(dateStart);
-		dateEnd.setDate(dateEnd.getDate() + lengthStay);
+		const startOfStay = new Date();
+		startOfStay.setDate(startOfStay.getDate() + randomPointInFuture);
 
-		const listing = listings.find(
-			(listing) => listing.id === review.listingId
-		);
+		const endOfStay = new Date(startOfStay);
+		endOfStay.setDate(endOfStay.getDate() + lengthOfStay);
 
-		return {
-			userId: review.authorId,
-			listingId: review.listingId,
-			dateStart: dateStart.toString(),
-			dateEnd: dateEnd.toString(),
-			totalPrice: calculateTotal(listing, lengthStay),
-		};
+		const date = new Date(startOfStay);
+		for (let i = 0; i < lengthOfStay; i++) {
+			date.setDate(date.getDate() + 1);
+			daysUsed.push(date.toLocaleDateString());
+		}
+
+		// Check to see if any any dates within datesUnavailable are in daysUsed
+		// This would be an M * N operation...
+		const successCheck = daysUsed.every((day) => {
+			return day in listing.datesUnavailable === false;
+		});
+
+		// Exit condition
+		if (successCheck) {
+			reservation.userId = user.id;
+			reservation.listingId = listing.id;
+			reservation.dateStart = startOfStay;
+			reservation.dateEnd = endOfStay;
+			reservation.totalPrice = calculateTotal(listing, lengthOfStay);
+
+			flag = false;
+		} else {
+			daysUsed.length = 0;
+		}
+	}
+
+	// Adding days in daysUsed into datesUnavailable
+	daysUsed.forEach((day) => {
+		listing.datesUnavailable[day] = true;
 	});
 
-	obj["reservations"] = reservations;
-	return obj;
-});
+	// Adding future reservation into user's reservations
+	user.reservations.push(reservation);
+};
 
 // Generating future reservations
 // 73 places, 248 users
-// Give each user approximately 10 future bookings (Gaussian Dist) to total to 2480 total future bookings 
-// This means that each listing will average 33 future bookings 
-// 33 future bookings * an average of 5 nights of stay means 165 total days booked for the future
-// This is roughly 6-8 months out. Assuming we're being spotty with bookings 
+// Give each user approximately 10 future bookings (Gaussian Dist) to total to 2480 total future bookings
+// This means that each listing will average 34 future bookings
+// 34 future bookings * an average of 3-4 nights of stay means 102-136 total days booked for the future per listing (3-4 months worth)
+// This is roughly 8 months out. Assuming we're being spotty with bookings
 
-// datesUnavailable = ['January 3 2022', 'January 4 2022', 'January 5 2022', 'January 7 2022', ...];
-// Devise an algorithm that checks for datesUnavailable and books days, randomly into the future 8 months 
+// datesAvailable = ['January 3 2022', 'January 4 2022', 'January 5 2022', 'January 7 2022', ...];
+// Devise a function that checks for datesUnavailable and books days, randomly into the future 8 months
 
-console.log(listings.length)
-console.log(248 * 10)
-console.log(2480 / 73)
-console.log(33 * 5)
+// Each user will have an average of 10 bookings...
+
+const resDist = require("./future_res_dist.json");
+
+const listingsId = hostAndListings
+	.map((host) => {
+		return host.listings.map((listing) => listing.id);
+	})
+	.reduce((cv, acc) => acc.concat(cv), []);
+
+for (let i = 0; i < resDist.length; i++) {
+	const numReservations = resDist[i];
+  const user = userAndReviews[i];
+
+  for (let j = 0; j < numReservations; j++) {
+		const randomListingIdx = Math.floor(Math.random() * listings.length);
+		const listingId = listingsId[randomListingIdx];
+
+		const host = hostAndListings.find((host) => {
+			return host.listings
+				.map((listing) => listing.id)
+				.includes(listingId);
+		});
+
+		const listing = host.listings.find((listing) => {
+			return listing.id === listingId;
+		});
+
+		generateReservation(user, listing);
+	}
+}
+// // Convert all totalPrices to numbers
+// userAndReviews.forEach((user) => {
+// 	const reservations = user.reservations;
+
+// 	reservations.forEach((review) => {
+// 		review.totalPrice = +review.totalPrice;
+// 	});
+// });
+
+// fs.writeFile(
+// 	"host_and_listings2.json",
+// 	JSON.stringify(hostAndListings),
+// 	(e) => {
+// 		if (e) console.log(e);
+// 	}
+// );
+
+// fs.writeFile(
+// 	"user_and_reviews_reservations2.json",
+// 	JSON.stringify(userAndReviews),
+// 	(e) => {
+// 		if (e) console.log(e);
+// 	}
+// );
