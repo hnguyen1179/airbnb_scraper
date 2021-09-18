@@ -31,8 +31,8 @@
 // 	amenities					String[]
 // 	houseRules				String[] 			// ex. ['Check-in: After 3:00 PM', 'Checkout: 11:00 AM', 'Self Check In', ''No Smoking', 'No pets', 'No parties', ...]
 // 	healthAndSafety 	String[] 			// ex. ['Committed to Airbnb's enhanced cleaning process', 'Airbnb's social-distancing and other COVID-19...', ...]
-// 	highlights				String[][] 		// ex. [['Entire Home', 'You'll have the place to yourself'], ['x','y'], ...]
-// 	scores						String[][]		// ex. [['Cleanliness', '5.0'], ['Location', '3.9'], ...]
+// 	highlights				String[] 	  	// ex. [['Entire Home', 'You'll have the place to yourself'], ['x','y'], ...]
+// 	scores						String[]  		// ex. [['Cleanliness', '5.0'], ['Location', '3.9'], ...]
 //  datesUnavailable  JSON
 //  region            String
 
@@ -42,7 +42,7 @@
 // 	createdAt			  	DateTime			
 // 	content				  	String
 // 	authorId			  	Int						// Generated
-// 	scores				  	String[][]    // ex. [['Cleanliness', '5.0'], ['Location', '3.9'], ...]			
+// 	scores				  	String[]      // ex. [['Cleanliness', '5.0'], ['Location', '3.9'], ...]			
 
 // NEW USERS MODEL
 //  id                Int           // Generated

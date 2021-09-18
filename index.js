@@ -23,6 +23,7 @@ const PALM_SPRINGS =
 	"https://www.airbnb.com/s/Palm-Springs/homes?refinement_paths%5B%5D=%2Fhomes&search_type=filter_change&tab_id=home_tab&flexible_trip_dates%5B%5D=august&flexible_trip_dates%5B%5D=september&flexible_trip_lengths%5B%5D=weekend_trip&date_picker_type=calendar&price_min=442&place_id=ChIJs-Xb_9Qa24ARfHntwodp5aE&superhost=true";
 const SANTA_BARBARA =
 	"https://www.airbnb.com/s/Santa-Barbara/homes?place_id=ChIJ1YMtb8cU6YARSHa612Q60cg&refinement_paths%5B%5D=%2Fhomes&search_type=section_navigation";
+const HOME = "https://www.airbnb.com/";
 
 const LISTINGS_COUNT = 12;
 
@@ -378,114 +379,130 @@ const extractReviews = async (page, id, scores) => {
 };
 
 const scraperMain = async (browser, page) => {
-	const output = [];
+	let output;
 
 	try {
-		for (let i = 0; i < LISTINGS_COUNT; i++) {
-			const basicListing = await page.evaluate(basicListingExtraction, i);
+		await page.waitForTimeout(2000);
 
-			// Grab the detailed listing link
-			const DETAILED_LISTING_LINK =
-				"https://www.airbnb.com" +
-				(await page.evaluate((idx) => {
-					return document
-						.querySelectorAll("._8s3ctt > a")
-						[idx].getAttribute("href");
-				}, i));
+		output = await page.evaluate(() => {
+			return [...document.querySelector("._fyxf74").children].map((child) => {
+				const title = child.querySelector("._3na96d").innerText;
+				const list = [...child.querySelector("._yuolfv").children].map(
+					(x) => x.innerText
+				);
 
-			// Navigate to listing page
-			const listingPage = await browser.newPage();
-			await Promise.all([
-				listingPage.setViewport({ width: 1440, height: 1000 }),
-				listingPage.goto(DETAILED_LISTING_LINK),
-				listingPage.waitForNavigation({
-					waitUntil: "networkidle2",
-				}),
-			]);
-
-			// Extracted detailed information from each listing
-			const detailedListing = await listingPage.evaluate(
-				detailedListingExtraction
-			);
-
-			// Added a unique, deterministic ID to each listing
-			detailedListing.id = hash(detailedListing);
-
-			// Save SVGs and Images of each listing into files
-			saveSVGs(detailedListing);
-			const comments = await saveIMGs(listingPage, detailedListing.id);
-			detailedListing.imageComments = comments;
-
-			// Go into reviews and extract some users & reviews
-			const listingReviews = await extractReviews(
-				listingPage,
-				detailedListing.id,
-				detailedListing.scores
-			);
-
-			// Close listing page
-			listingPage.close();
-
-			// Set up massive object for seed purposes
-
-			// console.log(detailedListing); // Object
-			// console.log(basicListing); // Object
-			// console.log(listingReviews); // Array of Objects
-
-			const languagesString =
-				detailedListing.hostDetails.find((x) =>
-					x.includes("Language")
-				) || "";
-			const listingLanguages = languagesString.split(" ").slice(1);
-
-			const listing = {
-				id: detailedListing.id,
-				title: basicListing.title,
-				street: "",
-				city: detailedListing.city,
-				location: basicListing.location,
-				listingDescription: detailedListing.listingDescription,
-				locationDescription: detailedListing.locationDescription,
-				stayDescription: detailedListing.stayDescription,
-				zipcode: 0,
-				price: basicListing.price,
-				priceBreakdown: detailedListing.priceBreakdown,
-				numGuests: basicListing.numGuests,
-				numBedrooms: basicListing.numBedrooms,
-				numBeds: basicListing.numBeds,
-				numBaths: basicListing.numBaths,
-				smokingRule:
-					detailedListing.houseRules.includes("Smoking is allowed"),
-				petsRule:
-					detailedListing.houseRules.includes("Pets are allowed"),
-				superhost: detailedListing.hostMedals.includes("Superhost"),
-				languages: listingLanguages,
-				imageComments: detailedListing.imageComments,
-				listingType: basicListing.listingType,
-				basicAmenities: basicListing.basicAmenities,
-				amenities: detailedListing.amenities,
-				houseRules: detailedListing.houseRules,
-				healthAndSafety: detailedListing.healthAndSafety,
-				highlights: detailedListing.highlights,
-				score: basicListing.reviewScore,
-				scoreBreakdown: detailedListing.scores,
-			};
-
-			const host = {
-				firstName: detailedListing.hostName,
-				dateJoined: detailedListing.hostJoined,
-				description: detailedListing.hostDescription,
-				details: detailedListing.hostDetails,
-				medals: detailedListing.hostMedals,
-			};
-
-			// Push massive object into 'output' array
-			output.push({
-				host,
-				listing,
-				reviews: listingReviews,
+				return {
+					title,
+					list,
+				};
 			});
-		}
+		})
+
+		// for (let i = 0; i < LISTINGS_COUNT; i++) {
+		// 	const basicListing = await page.evaluate(basicListingExtraction, i);
+
+		// 	// Grab the detailed listing link
+		// 	const DETAILED_LISTING_LINK =
+		// 		"https://www.airbnb.com" +
+		// 		(await page.evaluate((idx) => {
+		// 			return document
+		// 				.querySelectorAll("._8s3ctt > a")
+		// 				[idx].getAttribute("href");
+		// 		}, i));
+
+		// 	// Navigate to listing page
+		// 	const listingPage = await browser.newPage();
+		// 	await Promise.all([
+		// 		listingPage.setViewport({ width: 1440, height: 1000 }),
+		// 		listingPage.goto(DETAILED_LISTING_LINK),
+		// 		listingPage.waitForNavigation({
+		// 			waitUntil: "networkidle2",
+		// 		}),
+		// 	]);
+
+		// 	// Extracted detailed information from each listing
+		// 	const detailedListing = await listingPage.evaluate(
+		// 		detailedListingExtraction
+		// 	);
+
+		// 	// Added a unique, deterministic ID to each listing
+		// 	detailedListing.id = hash(detailedListing);
+
+		// 	// Save SVGs and Images of each listing into files
+		// 	saveSVGs(detailedListing);
+		// 	const comments = await saveIMGs(listingPage, detailedListing.id);
+		// 	detailedListing.imageComments = comments;
+
+		// 	// Go into reviews and extract some users & reviews
+		// 	const listingReviews = await extractReviews(
+		// 		listingPage,
+		// 		detailedListing.id,
+		// 		detailedListing.scores
+		// 	);
+
+		// 	// Close listing page
+		// 	listingPage.close();
+
+		// 	// Set up massive object for seed purposes
+
+		// 	// console.log(detailedListing); // Object
+		// 	// console.log(basicListing); // Object
+		// 	// console.log(listingReviews); // Array of Objects
+
+		// 	const languagesString =
+		// 		detailedListing.hostDetails.find((x) =>
+		// 			x.includes("Language")
+		// 		) || "";
+		// 	const listingLanguages = languagesString.split(" ").slice(1);
+
+		// 	const listing = {
+		// 		id: detailedListing.id,
+		// 		title: basicListing.title,
+		// 		street: "",
+		// 		city: detailedListing.city,
+		// 		location: basicListing.location,
+		// 		listingDescription: detailedListing.listingDescription,
+		// 		locationDescription: detailedListing.locationDescription,
+		// 		stayDescription: detailedListing.stayDescription,
+		// 		zipcode: 0,
+		// 		price: basicListing.price,
+		// 		priceBreakdown: detailedListing.priceBreakdown,
+		// 		numGuests: basicListing.numGuests,
+		// 		numBedrooms: basicListing.numBedrooms,
+		// 		numBeds: basicListing.numBeds,
+		// 		numBaths: basicListing.numBaths,
+		// 		smokingRule:
+		// 			detailedListing.houseRules.includes("Smoking is allowed"),
+		// 		petsRule:
+		// 			detailedListing.houseRules.includes("Pets are allowed"),
+		// 		superhost: detailedListing.hostMedals.includes("Superhost"),
+		// 		languages: listingLanguages,
+		// 		imageComments: detailedListing.imageComments,
+		// 		listingType: basicListing.listingType,
+		// 		basicAmenities: basicListing.basicAmenities,
+		// 		amenities: detailedListing.amenities,
+		// 		houseRules: detailedListing.houseRules,
+		// 		healthAndSafety: detailedListing.healthAndSafety,
+		// 		highlights: detailedListing.highlights,
+		// 		score: basicListing.reviewScore,
+		// 		scoreBreakdown: detailedListing.scores,
+		// 	};
+
+		// 	const host = {
+		// 		firstName: detailedListing.hostName,
+		// 		dateJoined: detailedListing.hostJoined,
+		// 		description: detailedListing.hostDescription,
+		// 		details: detailedListing.hostDetails,
+		// 		medals: detailedListing.hostMedals,
+		// 	};
+
+		// 	// Push massive object into 'output' array
+		// 	output.push({
+		// 		host,
+		// 		listing,
+		// 		reviews: listingReviews,
+		// 	});
+		// }
 	} catch (e) {
 		console.log(e);
 	}
@@ -496,17 +513,16 @@ const scraperMain = async (browser, page) => {
 (async () => {
 	const browser = await puppeteer.launch({
 		headless: false,
+		defaultViewport: null,
+		args: ["--start-maximized"],
 	});
 
 	const page = await browser.newPage();
-	await Promise.all([
-		page.setViewport({ width: 1440, height: 1000 }),
-		page.goto(SANTA_BARBARA),
-	]);
+	await Promise.all([page.goto(HOME)]);
 
 	const data = await scraperMain(browser, page);
 
-	fs.writeFile("./SANTA_BARBARA.json", JSON.stringify(data), (e) => {
+	fs.writeFile("./HOME.json", JSON.stringify(data), (e) => {
 		if (e) return console.log(e);
 		console.log("Output file successfully written");
 	});

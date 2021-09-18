@@ -116,25 +116,36 @@ const listingsId = hostAndListings
 
 for (let i = 0; i < resDist.length; i++) {
 	const numReservations = resDist[i];
-  const user = userAndReviews[i];
+	const user = userAndReviews[i];
 
-  for (let j = 0; j < numReservations; j++) {
+	for (let j = 0; j < numReservations; j++) {
 		const randomListingIdx = Math.floor(Math.random() * listings.length);
 		const listingId = listingsId[randomListingIdx];
 
-		const host = hostAndListings.find((host) => {
-			return host.listings
-				.map((listing) => listing.id)
-				.includes(listingId);
+		const host = hostAndListings.find((h) => {
+			return h.listings.map((l) => l.id).includes(listingId);
 		});
 
-		const listing = host.listings.find((listing) => {
-			return listing.id === listingId;
+		const listing = host.listings.find((l) => {
+			return l.id === listingId;
 		});
 
 		generateReservation(user, listing);
 	}
 }
+
+// convert each totalPrice to a number
+userAndReviews.forEach((user) => {
+	const reservations = user.reservations;
+	reservations.forEach((reservation) => {
+		reservation.totalPrice = Number(reservation.totalPrice);
+	});
+});
+
+fs.writeFile("proper_reservations.json", JSON.stringify(userAndReviews), (e) =>
+	e ? console.log(e) : console.log("yes")
+);
+
 // // Convert all totalPrices to numbers
 // userAndReviews.forEach((user) => {
 // 	const reservations = user.reservations;
